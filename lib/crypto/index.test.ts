@@ -13,6 +13,7 @@ import {
   recoverFromBackupPhrase,
   createSealedRecoveryEnvelope,
   openSealedRecoveryEnvelope,
+  deriveKeypairFromMasterKey,
   searchHash,
   toBase64,
 } from './index'
@@ -171,6 +172,36 @@ describe('createSealedRecoveryEnvelope / openSealedRecoveryEnvelope', () => {
       openSealedRecoveryEnvelope(envelope, secret2)
     ).rejects.toThrow()
   })
+})
+
+describe('deriveKeypairFromMasterKey', () => {
+  it('is deterministic — same master key → same keypair', async () => {
+    const salt = await generatePwhashSalt()
+    const masterKey = await deriveMasterKey('test-pass', salt)
+    const kp1 = await deriveKeypairFromMasterKey(masterKey)
+    const kp2 = await deriveKeypairFromMasterKey(masterKey)
+    expect(kp1.publicKey).toBe(kp2.publicKey)
+    expect(toBase64(kp1.privateKey)).toBe(toBase64(kp2.privateKey))
+  }, 15_000)
+
+  it('different master key → different keypair', async () => {
+    const salt = await generatePwhashSalt()
+    const mk1 = await deriveMasterKey('pass-one', salt)
+    const mk2 = await deriveMasterKey('pass-two', salt)
+    const kp1 = await deriveKeypairFromMasterKey(mk1)
+    const kp2 = await deriveKeypairFromMasterKey(mk2)
+    expect(kp1.publicKey).not.toBe(kp2.publicKey)
+  }, 15_000)
+
+  it('derived keypair can wrap and unwrap the family key', async () => {
+    const salt = await generatePwhashSalt()
+    const masterKey = await deriveMasterKey('test-pass', salt)
+    const { publicKey, privateKey } = await deriveKeypairFromMasterKey(masterKey)
+    const familyKey = await generateFamilyKey()
+    const wrapped = await wrapKeyForMember(familyKey, publicKey)
+    const unwrapped = await unwrapFamilyKey(wrapped, publicKey, toBase64(privateKey))
+    expect(toBase64(unwrapped)).toBe(toBase64(familyKey))
+  }, 15_000)
 })
 
 describe('searchHash', () => {

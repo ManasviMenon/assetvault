@@ -164,15 +164,33 @@ export async function unwrapFamilyKey(
   return opened
 }
 
+// ── deterministic keypair from master key ─────────────────────────────────────
+
+/**
+ * Derive an X25519 keypair deterministically from the master key.
+ * Same master key → same keypair every time, so we never need to store
+ * the private key — it is re-derived on every login from the passphrase.
+ * Only the public key is stored on the server (in members.public_key).
+ */
+export async function deriveKeypairFromMasterKey(masterKey: Uint8Array): Promise<{
+  publicKey: string      // base64url — store in members.public_key
+  privateKey: Uint8Array // keep in memory only, never store or transmit
+}> {
+  const sodium = await getSodium()
+  const seed = sodium.crypto_generichash(
+    sodium.crypto_box_SEEDBYTES,
+    masterKey,
+    new TextEncoder().encode('virasat-v1-member-keypair')
+  )
+  const kp = sodium.crypto_box_seed_keypair(seed)
+  return { publicKey: toBase64(kp.publicKey), privateKey: kp.privateKey }
+}
+
 // ── backup phrase (BIP-39, 24 words = 256 bits) ───────────────────────────────
 
 /**
  * Generate a 24-word BIP-39 recovery phrase that encodes a 32-byte recovery key.
  * The phrase is shown to the user ONCE during setup; they must write it down.
- * The recovery key should be used to wrap the family key as a backup:
- *   encryptRecord({ key: toBase64(familyKey) }, recoveryKey)
- * Store the encrypted backup in member_keys.wrapped_family_key with
- * recovery_method = 'backup_phrase'.
  */
 export async function generateBackupPhrase(): Promise<{
   phrase: string
