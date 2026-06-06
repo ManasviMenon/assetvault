@@ -1,11 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -23,7 +21,10 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error: otpErr } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     })
 
     if (otpErr) {
@@ -32,17 +33,34 @@ export default function LoginPage() {
       return
     }
 
-    sessionStorage.setItem('virasat_email', email)
     setSent(true)
     setLoading(false)
-    router.push('/otp')
+  }
+
+  if (sent) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center">
+        <div className="text-4xl mb-4">📬</div>
+        <h2 className="text-xl font-semibold text-stone-900 mb-2">Check your email</h2>
+        <p className="text-stone-500 text-sm mb-6">
+          We sent a sign-in link to <span className="text-stone-700 font-medium">{email}</span>.
+          Click the link in that email to continue.
+        </p>
+        <button
+          onClick={() => setSent(false)}
+          className="text-green-800 text-sm font-medium hover:underline"
+        >
+          Use a different email
+        </button>
+      </div>
+    )
   }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8">
       <h2 className="text-xl font-semibold text-stone-900 mb-1">Sign in</h2>
       <p className="text-stone-500 text-sm mb-6">
-        We'll send a one-time code to your email address.
+        We'll send a sign-in link to your email address.
       </p>
 
       <div className="mb-4">
@@ -71,14 +89,12 @@ export default function LoginPage() {
           disabled:opacity-50 disabled:cursor-not-allowed
           hover:bg-green-900 transition-colors"
       >
-        {loading ? 'Sending…' : 'Send code'}
+        {loading ? 'Sending…' : 'Send sign-in link'}
       </button>
 
       <p className="text-stone-400 text-xs text-center mt-6">
         By continuing, you agree to Virasat's terms of service.
       </p>
-
-      {/* DEV NOTE: using email OTP during development — swap to phone + MSG91 before beta */}
     </div>
   )
 }
