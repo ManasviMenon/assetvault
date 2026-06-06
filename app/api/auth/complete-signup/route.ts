@@ -46,20 +46,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create family' }, { status: 500 })
   }
 
-  // Create member row
+  // Create member row — use email for email-based auth, phone for phone-based auth
   const { error: memberErr } = await adminClient
     .from('members')
     .insert({
       id: user.id,
       family_id: family.id,
-      phone_e164: user.phone ?? '',
+      phone_e164: user.phone ?? null,
+      email: user.email ?? null,
       role: 'owner',
       public_key: publicKey,
       pwhash_salt: pwhashSalt,
     })
 
   if (memberErr) {
-    // Roll back family
     await adminClient.from('families').delete().eq('id', family.id)
     return NextResponse.json({ error: 'Failed to create member' }, { status: 500 })
   }
@@ -88,11 +88,7 @@ export async function POST(request: NextRequest) {
   // Create DPDPA consent record
   await adminClient
     .from('consents')
-    .insert({
-      member_id: user.id,
-      scope: 'data_processing',
-      version: '1.0',
-    })
+    .insert({ member_id: user.id, scope: 'data_processing', version: '1.0' })
 
   // Audit log
   await adminClient.from('audit_log').insert({

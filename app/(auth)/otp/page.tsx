@@ -7,7 +7,7 @@ import { getMemberStatus } from '@/lib/db/auth'
 
 export default function OtpPage() {
   const router = useRouter()
-  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -15,9 +15,9 @@ export default function OtpPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('virasat_phone')
+    const stored = sessionStorage.getItem('virasat_email')
     if (!stored) { router.replace('/login'); return }
-    setPhone(stored)
+    setEmail(stored)
     inputRefs.current[0]?.focus()
   }, [router])
 
@@ -42,9 +42,9 @@ export default function OtpPage() {
     const supabase = createClient()
 
     const { error: verifyErr } = await supabase.auth.verifyOtp({
-      phone,
+      email,
       token: code,
-      type: 'sms',
+      type: 'email',
     })
 
     if (verifyErr) {
@@ -55,7 +55,6 @@ export default function OtpPage() {
       return
     }
 
-    // Check if this is a new or returning user
     const status = await getMemberStatus()
     if (status.exists) {
       router.replace('/passphrase/unlock')
@@ -67,7 +66,7 @@ export default function OtpPage() {
   async function resend() {
     setResending(true)
     const supabase = createClient()
-    await supabase.auth.signInWithOtp({ phone, options: { shouldCreateUser: true } })
+    await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
     setResending(false)
     setOtp(['', '', '', '', '', ''])
     inputRefs.current[0]?.focus()
@@ -77,7 +76,7 @@ export default function OtpPage() {
     <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8">
       <h2 className="text-xl font-semibold text-stone-900 mb-1">Enter your code</h2>
       <p className="text-stone-500 text-sm mb-6">
-        Sent to {phone}
+        Sent to <span className="text-stone-700 font-medium">{email}</span>
       </p>
 
       <div className="flex gap-2 justify-between mb-6">
@@ -101,10 +100,7 @@ export default function OtpPage() {
       </div>
 
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
-
-      {loading && (
-        <p className="text-stone-500 text-sm text-center mb-4">Verifying…</p>
-      )}
+      {loading && <p className="text-stone-500 text-sm text-center mb-4">Verifying…</p>}
 
       <button
         onClick={resend}
@@ -115,10 +111,10 @@ export default function OtpPage() {
       </button>
 
       <button
-        onClick={() => { sessionStorage.removeItem('virasat_phone'); router.push('/login') }}
+        onClick={() => { sessionStorage.removeItem('virasat_email'); router.push('/login') }}
         className="w-full text-stone-400 text-sm py-2 mt-1 hover:text-stone-600"
       >
-        Use a different number
+        Use a different email
       </button>
     </div>
   )
