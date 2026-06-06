@@ -4,21 +4,6 @@
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
--- Helper: get the current user's family_id without hitting RLS recursion.
--- SECURITY DEFINER means it runs as the function owner (postgres), so it can
--- read the members table even before the caller's own RLS policy is satisfied.
--- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION get_my_family_id()
-RETURNS uuid
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT family_id FROM members WHERE id = auth.uid()
-$$;
-
--- ---------------------------------------------------------------------------
 -- Helper: update updated_at automatically on any UPDATE
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION set_updated_at()
@@ -60,6 +45,19 @@ CREATE TABLE members (
   kyc_status   text NOT NULL DEFAULT 'none',
   created_at   timestamptz NOT NULL DEFAULT now()
 );
+
+-- Helper: get the current user's family_id without hitting RLS recursion.
+-- Defined here, after members exists. SECURITY DEFINER bypasses RLS on members
+-- when called from other tables' policies, preventing infinite recursion.
+CREATE OR REPLACE FUNCTION get_my_family_id()
+RETURNS uuid
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT family_id FROM members WHERE id = auth.uid()
+$$;
 
 -- member_keys -----------------------------------------------------------------
 CREATE TABLE member_keys (
