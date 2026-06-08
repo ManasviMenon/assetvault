@@ -43,13 +43,14 @@ export interface Database {
           plan_tier?: PlanTier
           dpdp_consent_version?: string | null
         }
+        Relationships: []
       }
 
       members: {
         Row: {
           id: string
           family_id: string
-          phone_e164: string
+          phone_e164: string | null
           email: string | null
           role: MemberRole
           public_key: string | null
@@ -58,9 +59,9 @@ export interface Database {
           created_at: string
         }
         Insert: {
-          id: string            // must equal auth.uid()
+          id: string
           family_id: string
-          phone_e164: string
+          phone_e164?: string | null
           email?: string | null
           role: MemberRole
           public_key?: string | null
@@ -75,6 +76,7 @@ export interface Database {
           pwhash_salt?: string | null
           kyc_status?: string
         }
+        Relationships: []
       }
 
       member_keys: {
@@ -82,16 +84,20 @@ export interface Database {
           member_id: string
           wrapped_family_key: string
           recovery_method: string
+          recovery_envelope: string | null
         }
         Insert: {
           member_id: string
           wrapped_family_key: string
           recovery_method?: string
+          recovery_envelope?: string | null
         }
         Update: {
           wrapped_family_key?: string
           recovery_method?: string
+          recovery_envelope?: string | null
         }
+        Relationships: []
       }
 
       assets: {
@@ -99,7 +105,7 @@ export interface Database {
           id: string
           family_id: string
           type: AssetType
-          encrypted_blob: string   // JSON {ciphertext, nonce}
+          encrypted_blob: string
           search_hash: string | null
           est_value_bucket: string | null
           status: AssetStatus
@@ -126,6 +132,7 @@ export interface Database {
           status?: AssetStatus
           updated_at?: string
         }
+        Relationships: []
       }
 
       asset_nominees: {
@@ -145,6 +152,7 @@ export interface Database {
           percentage?: number | null
           is_legal_heir?: boolean
         }
+        Relationships: []
       }
 
       documents: {
@@ -168,7 +176,10 @@ export interface Database {
           sha256: string
           created_at?: string
         }
-        Update: never
+        Update: {
+          r2_key?: string
+        }
+        Relationships: []
       }
 
       reminders: {
@@ -199,6 +210,7 @@ export interface Database {
           notified_30?: boolean
           notified_7?: boolean
         }
+        Relationships: []
       }
 
       triggers: {
@@ -230,6 +242,7 @@ export interface Database {
           contest_deadline?: string | null
           resolved_at?: string | null
         }
+        Relationships: []
       }
 
       audit_log: {
@@ -251,7 +264,10 @@ export interface Database {
           target_id?: string | null
           ts?: string
         }
-        Update: never
+        Update: {
+          action?: string
+        }
+        Relationships: []
       }
 
       consents: {
@@ -274,6 +290,7 @@ export interface Database {
         Update: {
           revoked_at?: string | null
         }
+        Relationships: []
       }
 
       subscriptions: {
@@ -301,12 +318,17 @@ export interface Database {
           period_end?: string | null
           razorpay_ref?: string | null
         }
+        Relationships: []
       }
+    }
+
+    Views: {
+      [_ in never]: never
     }
 
     Functions: {
       get_my_family_id: {
-        Args: Record<string, never>
+        Args: Record<PropertyKey, never>
         Returns: string
       }
     }

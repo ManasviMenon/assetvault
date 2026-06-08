@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       wrapped_family_key: wrappedFamilyKey,
       recovery_method: 'backup_phrase',
       recovery_envelope: recoveryEnvelope,
-    } as Record<string, unknown>)
+    })
 
   if (keysErr) {
     await adminClient.from('members').delete().eq('id', user.id)
