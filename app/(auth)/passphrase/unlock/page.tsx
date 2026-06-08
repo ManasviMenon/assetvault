@@ -18,6 +18,7 @@ export default function PassphraseUnlockPage() {
   const [passphrase, setPassphrase] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPass, setShowPass] = useState(false)
 
   async function handleUnlock() {
     if (!passphrase) return
@@ -60,16 +61,26 @@ export default function PassphraseUnlockPage() {
 
       <div className="mb-5">
         <label className="block text-sm font-medium text-stone-700 mb-1">Passphrase</label>
-        <input
-          type="password"
-          value={passphrase}
-          onChange={e => setPassphrase(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleUnlock()}
-          placeholder="Your vault passphrase"
-          autoFocus
-          className="w-full border border-stone-300 rounded-lg px-3 py-3 text-stone-900
-            focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-green-700"
-        />
+        <div className="relative">
+          <input
+            type={showPass ? 'text' : 'password'}
+            value={passphrase}
+            onChange={e => setPassphrase(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleUnlock()}
+            placeholder="Your vault passphrase"
+            autoFocus
+            className="w-full border border-stone-300 rounded-lg px-3 py-3 pr-10 text-stone-900
+              focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-green-700"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPass(v => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+            tabIndex={-1}
+          >
+            {showPass ? '🙈' : '👁'}
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}

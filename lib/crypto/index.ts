@@ -21,14 +21,20 @@ async function getSodium() {
 
 // ── encoding helpers ──────────────────────────────────────────────────────────
 
-/** Encode bytes as base64url (no padding, URL-safe). */
+/** Encode bytes as base64url (no padding, URL-safe). Works in browser and Node. */
 export function toBase64(bytes: Uint8Array): string {
-  return Buffer.from(bytes).toString('base64url')
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
 }
 
-/** Decode a base64url string back to bytes. */
+/** Decode a base64url string back to bytes. Accepts base64url or standard base64. */
 export function fromBase64(b64: string): Uint8Array {
-  return new Uint8Array(Buffer.from(b64, 'base64url'))
+  const padded = b64.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice(0, (4 - (b64.length % 4)) % 4)
+  const binary = atob(padded)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
 }
 
 // ── key derivation (Argon2id) ─────────────────────────────────────────────────

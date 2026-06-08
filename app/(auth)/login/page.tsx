@@ -5,12 +5,28 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getMemberStatus } from '@/lib/db/auth'
 
+function passwordStrength(p: string): { label: string; color: string; width: string } {
+  if (p.length === 0) return { label: '', color: '', width: '0%' }
+  let score = 0
+  if (p.length >= 6) score++
+  if (p.length >= 10) score++
+  if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++
+  if (/[0-9]/.test(p)) score++
+  if (/[^A-Za-z0-9]/.test(p)) score++
+  if (score <= 1) return { label: 'Weak', color: 'bg-red-400', width: '20%' }
+  if (score === 2) return { label: 'Fair', color: 'bg-amber-400', width: '45%' }
+  if (score === 3) return { label: 'Good', color: 'bg-yellow-400', width: '65%' }
+  if (score === 4) return { label: 'Strong', color: 'bg-green-500', width: '85%' }
+  return { label: 'Very strong', color: 'bg-green-700', width: '100%' }
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleLogin() {
     if (!email.includes('@') || password.length < 6) {
@@ -22,11 +38,9 @@ export default function LoginPage() {
 
     const supabase = createClient()
 
-    // Try signing in first
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
 
     if (signInErr) {
-      // If user doesn't exist, sign them up
       if (signInErr.message.toLowerCase().includes('invalid') || signInErr.message.toLowerCase().includes('not found') || signInErr.message.toLowerCase().includes('credentials')) {
         const { error: signUpErr } = await supabase.auth.signUp({ email, password })
         if (signUpErr) {
@@ -34,7 +48,6 @@ export default function LoginPage() {
           setLoading(false)
           return
         }
-        // Signed up → new user
         router.replace('/passphrase/setup')
         return
       }
@@ -43,7 +56,6 @@ export default function LoginPage() {
       return
     }
 
-    // Signed in → check if new or returning
     const status = await getMemberStatus()
     if (status.exists) {
       router.replace('/passphrase/unlock')
@@ -51,6 +63,8 @@ export default function LoginPage() {
       router.replace('/passphrase/setup')
     }
   }
+
+  const strength = passwordStrength(password)
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8">
@@ -75,16 +89,37 @@ export default function LoginPage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-1">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            placeholder="At least 6 characters"
-            className="w-full border border-stone-300 rounded-lg px-3 py-3 text-stone-900
-              placeholder-stone-400 outline-none
-              focus:ring-2 focus:ring-green-700 focus:border-green-700"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              placeholder="At least 6 characters"
+              className="w-full border border-stone-300 rounded-lg px-3 py-3 pr-10 text-stone-900
+                placeholder-stone-400 outline-none
+                focus:ring-2 focus:ring-green-700 focus:border-green-700"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+              tabIndex={-1}
+            >
+              {showPassword ? '🙈' : '👁'}
+            </button>
+          </div>
+          {password && (
+            <div className="mt-2">
+              <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${strength.color}`}
+                  style={{ width: strength.width }}
+                />
+              </div>
+              <p className="text-xs mt-1 text-stone-500">{strength.label}</p>
+            </div>
+          )}
         </div>
       </div>
 

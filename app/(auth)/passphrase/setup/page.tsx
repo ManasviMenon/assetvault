@@ -16,6 +16,21 @@ import {
 
 type Step = 'passphrase' | 'backup' | 'confirm'
 
+function passphraseStrength(p: string): { label: string; color: string; width: string } {
+  if (p.length === 0) return { label: '', color: '', width: '0%' }
+  let score = 0
+  if (p.length >= 8) score++
+  if (p.length >= 12) score++
+  if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++
+  if (/[0-9]/.test(p)) score++
+  if (/[^A-Za-z0-9]/.test(p)) score++
+  if (score <= 1) return { label: 'Weak', color: 'bg-red-400', width: '20%' }
+  if (score === 2) return { label: 'Fair', color: 'bg-amber-400', width: '45%' }
+  if (score === 3) return { label: 'Good', color: 'bg-yellow-400', width: '65%' }
+  if (score === 4) return { label: 'Strong', color: 'bg-green-500', width: '85%' }
+  return { label: 'Very strong', color: 'bg-green-700', width: '100%' }
+}
+
 export default function PassphraseSetupPage() {
   const router = useRouter()
   const { setFamilyKey } = useCrypto()
@@ -26,6 +41,8 @@ export default function PassphraseSetupPage() {
   const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPass, setShowPass] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   // Generated in step 1, shown in step 2
   const [backupPhrase, setBackupPhrase] = useState('')
@@ -122,25 +139,56 @@ export default function PassphraseSetupPage() {
         <div className="space-y-4 mb-5">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Passphrase</label>
-            <input
-              type="password"
-              value={passphrase}
-              onChange={e => setPassphrase(e.target.value)}
-              placeholder="At least 8 characters"
-              className="w-full border border-stone-300 rounded-lg px-3 py-3 text-stone-900
-                focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-green-700"
-            />
+            <div className="relative">
+              <input
+                type={showPass ? 'text' : 'password'}
+                value={passphrase}
+                onChange={e => setPassphrase(e.target.value)}
+                placeholder="At least 8 characters"
+                className="w-full border border-stone-300 rounded-lg px-3 py-3 pr-10 text-stone-900
+                  focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-green-700"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                tabIndex={-1}
+              >
+                {showPass ? '🙈' : '👁'}
+              </button>
+            </div>
+            {passphrase && (() => {
+              const s = passphraseStrength(passphrase)
+              return (
+                <div className="mt-2">
+                  <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${s.color}`} style={{ width: s.width }} />
+                  </div>
+                  <p className="text-xs mt-1 text-stone-500">{s.label}</p>
+                </div>
+              )
+            })()}
           </div>
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">Confirm passphrase</label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              placeholder="Same passphrase again"
-              className="w-full border border-stone-300 rounded-lg px-3 py-3 text-stone-900
-                focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-green-700"
-            />
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                placeholder="Same passphrase again"
+                className="w-full border border-stone-300 rounded-lg px-3 py-3 pr-10 text-stone-900
+                  focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-green-700"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                tabIndex={-1}
+              >
+                {showConfirm ? '🙈' : '👁'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -192,6 +240,24 @@ export default function PassphraseSetupPage() {
           </div>
         </div>
 
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 space-y-2">
+          <p className="text-sm font-semibold text-amber-900">Before you continue</p>
+          <ul className="space-y-1.5">
+            <li className="flex items-start gap-2 text-sm text-amber-800">
+              <span className="mt-0.5 shrink-0">✎</span>
+              <span>Write these 24 words on paper right now — in order, exactly as shown.</span>
+            </li>
+            <li className="flex items-start gap-2 text-sm text-amber-800">
+              <span className="mt-0.5 shrink-0">⚠</span>
+              <span>Store the paper somewhere safe. Not a photo. Not a notes app. Physical paper only.</span>
+            </li>
+            <li className="flex items-start gap-2 text-sm text-amber-800">
+              <span className="mt-0.5 shrink-0">🔒</span>
+              <span>If you lose this paper and forget your passphrase, your vault is permanently locked — nobody, including us, can help you.</span>
+            </li>
+          </ul>
+        </div>
+
         <label className="flex items-start gap-3 mb-5 cursor-pointer">
           <input
             type="checkbox"
@@ -212,7 +278,7 @@ export default function PassphraseSetupPage() {
           className="w-full bg-green-800 text-white rounded-lg py-3 font-medium
             disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-900 transition-colors"
         >
-          {finalising ? 'Opening your vault…' : 'I've saved my phrase — open vault'}
+          {finalising ? 'Opening your vault…' : "I've saved my phrase — open vault"}
         </button>
       </div>
     )

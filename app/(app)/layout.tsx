@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/server'
-import { CryptoProvider } from '@/contexts/CryptoContext'
 import KeyGuard from './KeyGuard'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -11,10 +10,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!user) redirect('/login')
 
   return (
-    <CryptoProvider>
-      <KeyGuard>
-        {children}
-      </KeyGuard>
-    </CryptoProvider>
+    <KeyGuard>
+      {children}
+    </KeyGuard>
   )
 }
