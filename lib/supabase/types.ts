@@ -293,6 +293,35 @@ export interface Database {
         Relationships: []
       }
 
+      invitations: {
+        Row: {
+          id: string
+          family_id: string
+          email: string
+          role: MemberRole
+          token: string
+          created_by: string
+          expires_at: string
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          family_id: string
+          email: string
+          role?: MemberRole
+          token?: string
+          created_by: string
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+        }
+        Relationships: []
+      }
+
       subscriptions: {
         Row: {
           id: string
