@@ -32,16 +32,22 @@ export interface Database {
           plan_tier: PlanTier
           created_at: string
           dpdp_consent_version: string | null
+          deletion_requested_at: string | null
+          deletion_cancelled_at: string | null
         }
         Insert: {
           id?: string
           plan_tier?: PlanTier
           created_at?: string
           dpdp_consent_version?: string | null
+          deletion_requested_at?: string | null
+          deletion_cancelled_at?: string | null
         }
         Update: {
           plan_tier?: PlanTier
           dpdp_consent_version?: string | null
+          deletion_requested_at?: string | null
+          deletion_cancelled_at?: string | null
         }
         Relationships: []
       }
